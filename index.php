@@ -50,6 +50,12 @@
                 echo json_encode(['success' => true, 'data' => $inventory]);
                 break;
 
+            case 'getItem':
+
+                 $itemId =  $date['id'] ?? null;
+
+                 
+                break;
             case 'addItem':
                 //Validate data
 
@@ -88,68 +94,68 @@
                 break;
 
             case 'updateItem':
-                if (empty($input['id'])) {
-                    throw new Exception("Item ID is required");
-                }
+                // if (empty($input['id'])) {
+                //     throw new Exception("Item ID is required");
+                // }
 
                 $updates = [];
                 $params  = [];
 
-                if (isset($input['name'])) {
+                if (isset($data['name'])) {
                     $updates[] = "name = ?";
-                    $params[]  = $input['name'];
+                    $params[]  = $data['name'];
                 }
 
-                if (isset($input['category_id'])) {
+                if (isset($data['category_id'])) {
                     $updates[] = "category_id = ?";
-                    $params[]  = $input['category_id'];
+                    $params[]  = $data['category_id'];
                 }
 
-                if (isset($input['quantity'])) {
-                    if ($input['quantity'] < 0) {
-                        throw new Exception("Quantity cannot be negative");
-                    }
+                if (isset($data['quantity'])) {
+                    // if ($input['quantity'] < 0) {
+                    //     throw new Exception("Quantity cannot be negative");
+                    // }
                     $updates[] = "quantity = ?";
-                    $params[]  = $input['quantity'];
+                    $params[]  = $data['quantity'];
                 }
 
-                if (isset($input['unit_id'])) {
+                if (isset($data['unit_id'])) {
                     $updates[] = "unit_id = ?";
-                    $params[]  = $input['unit_id'];
+                    $params[]  = $data['unit_id'];
                 }
 
-                if (isset($input['expiry_date'])) {
+                if (isset($data['expiry_date'])) {
                     $updates[] = "expiry_date = ?";
-                    $params[]  = $input['expiry_date'];
+                    $params[]  = $data['expiry_date'];
                 }
 
                 if (empty($updates)) {
                     throw new Exception("No fields to update");
                 }
 
-                $params[] = $input['id'];
+                $params[] = $data['id'];
 
                 $query = "UPDATE inventory SET " . implode(", ", $updates) . " WHERE id = ?";
                 $stmt  = $pdo->prepare($query);
                 $stmt->execute($params);
 
                 // Log the update if quantity changed
-                if (isset($input['quantity'])) {
-                    $stmt = $pdo->prepare("SELECT quantity FROM inventory WHERE id = ?");
-                    $stmt->execute([$input['id']]);
-                    $current = $stmt->fetchColumn();
+                // if (isset($input['quantity'])) {
+                //     $stmt = $pdo->prepare("SELECT quantity FROM inventory WHERE id = ?");
+                //     $stmt->execute([$input['id']]);
+                //     $current = $stmt->fetchColumn();
 
-                    $change = $input['quantity'] - $current;
-                    if ($change != 0) {
-                        $action = $change > 0 ? 'add' : 'remove';
-                        $stmt   = $pdo->prepare("INSERT INTO inventory_logs
-                                          (inventory_id, quantity_change, action, notes)
-                                          VALUES (?, ?, ?, 'Manual quantity adjustment')");
-                        $stmt->execute([$input['id'], abs($change), $action]);
-                    }
-                }
+                //     $change = $input['quantity'] - $current;
+                //     if ($change != 0) {
+                //         $action = $change > 0 ? 'add' : 'remove';
+                //         $stmt   = $pdo->prepare("INSERT INTO inventory_logs
+                //                           (inventory_id, quantity_change, action, notes)
+                //                           VALUES (?, ?, ?, 'Manual quantity adjustment')");
+                //         $stmt->execute([$input['id'], abs($change), $action]);
+                //     }
+                // }
 
-                echo json_encode(['success' => true]);
+                echo json_encode(['success' => true, 'message' => 'Item successfully updated']);
                 break;
 
             case 'deleteItem':
