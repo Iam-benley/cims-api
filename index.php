@@ -20,41 +20,37 @@
     try {
         switch ($method) {
             case 'getInventory':
-                //Validate data
+                // Validate data
                 $category   = $data['category_id'] ?? null;
                 $name       = $data['name'] ?? null;
                 $params     = [];
                 $conditions = [];
-
-                $query = "SELECT * FROM inventory";
-
+            
+                // Updated query with joins
+                $query = "SELECT i.*, c.name as category_name, u.name as unit_name 
+                          FROM inventory i
+                          LEFT JOIN categories c ON i.category_id = c.id
+                          LEFT JOIN units u ON i.unit_id = u.id";
+            
                 if (!empty($name)) {
-                    $conditions[] = "name LIKE ?";
+                    $conditions[] = "i.name LIKE ?";
                     $params[]     = "%$name%";
                 }
-
+            
                 if (!empty($category)) {
-                    $conditions[] = "category_id = ?";
+                    $conditions[] = "i.category_id = ?";
                     $params[]     = $category;
                 }
-
-
+            
                 if (!empty($conditions)) {
                     $query .= " WHERE " . implode(" AND ", $conditions);
                 }
-
+            
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
                 $inventory = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+            
                 echo json_encode(['success' => true, 'data' => $inventory]);
-                break;
-
-            case 'getItem':
-
-                 $itemId =  $date['id'] ?? null;
-
-                 
                 break;
             case 'addItem':
                 //Validate data
@@ -79,7 +75,7 @@
                     $data['category_id'],
                     $data['quantity'],
                     $data['unit_id'],
-                    null,
+                    $data['expiry_date'] ?? null,
                 ]);
 
                 $itemId = $pdo->lastInsertId();
@@ -159,38 +155,40 @@
                 break;
 
             case 'deleteItem':
-                if (empty($input['id'])) {
-                    throw new Exception("Item ID is required");
-                }
+                // if (empty($input['id'])) {
+                //     throw new Exception("Item ID is required");
+                // }
 
                 // First get the item to log the deletion
                 $stmt = $pdo->prepare("SELECT quantity FROM inventory WHERE id = ?");
-                $stmt->execute([$input['id']]);
+                $stmt->execute([$data['id']]);
                 $quantity = $stmt->fetchColumn();
+
+                // // Log the deletion
+                // if ($quantity > 0) {
+                //     $stmt = $pdo->prepare("INSERT INTO inventory_logs
+                //                       (inventory_id, quantity_change, action, notes)
+                //                       VALUES (?, ?, 'remove', 'Item deleted from inventory')");
+                //     $stmt->execute([$data['id'], $quantity]);
+                // }
 
                 // Delete the item
                 $stmt = $pdo->prepare("DELETE FROM inventory WHERE id = ?");
-                $stmt->execute([$input['id']]);
-
-                // Log the deletion
-                if ($quantity > 0) {
-                    $stmt = $pdo->prepare("INSERT INTO inventory_logs
-                                      (inventory_id, quantity_change, action, notes)
-                                      VALUES (?, ?, 'remove', 'Item deleted from inventory')");
-                    $stmt->execute([$input['id'], $quantity]);
-                }
+                $stmt->execute([$data['id']]);
 
                 echo json_encode(['success' => true]);
                 break;
 
             case 'getCategories':
                 $stmt = $pdo->query("SELECT id, name FROM categories");
-                echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
+                $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                echo json_encode(['success' => true, 'data' => $categories]);
                 break;
 
             case 'getUnits':
                 $stmt = $pdo->query("SELECT id, name, abbreviation FROM units");
-                echo json_encode(['success' => true, 'data' => $stmt->fetchAll()]);
+                $units = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                echo json_encode(['success' => true, 'data' => $units]);
                 break;
 
             case 'getMonthlyReport':
