@@ -75,7 +75,7 @@
                     $data['category_id'],
                     $data['quantity'],
                     $data['unit_id'],
-                    $data['expiry_date'] ?? null,
+                    !empty($data['expiry_date']) ? $data['expiry_date'] : null,
                 ]);
 
                 $itemId = $pdo->lastInsertId();
@@ -122,7 +122,7 @@
 
                 if (isset($data['expiry_date'])) {
                     $updates[] = "expiry_date = ?";
-                    $params[]  = $data['expiry_date'];
+                    $params[]  =  !empty($data['expiry_date']) ? $data['expiry_date'] : null;
                 }
 
                 if (empty($updates)) {
