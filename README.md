@@ -1,2 +1,5 @@
-check dbcon for database credentials -> update credentials when running
-then run database migration script - to do
+Setup Instruction
+
+Input your mysql server credentials then run the migration file.
+
+run you php server to serve this file.

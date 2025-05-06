@@ -191,35 +191,38 @@
                 echo json_encode(['success' => true, 'data' => $units]);
                 break;
 
-            case 'getMonthlyReport':
-                $month    = $_GET['month'] ?? date('Y-m');
-                $category = $_GET['category'] ?? null;
-
-                $query = "SELECT i.name, c.name as category,
-                     SUM(CASE WHEN l.action = 'remove' THEN l.quantity_change ELSE 0 END) as dispensed,
-                     u.abbreviation as unit
-                     FROM inventory_logs l
-                     JOIN inventory i ON l.inventory_id = i.id
-                     JOIN categories c ON i.category_id = c.id
-                     JOIN units u ON i.unit_id = u.id
-                     WHERE DATE_FORMAT(l.created_at, '%Y-%m') = ?";
-
-                $params = [$month];
-
-                if ($category) {
-                    $query .= " AND c.name = ?";
-                    $params[] = $category;
-                }
-
-                $query .= " GROUP BY i.id, i.name, c.name, u.abbreviation";
-
-                $stmt = $pdo->prepare($query);
-                $stmt->execute($params);
-                $report = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                echo json_encode(['success' => true, 'data' => $report, 'month' => $month]);
-                break;
-
+                case 'getDispenseReport':
+                    // Get the month-year input (format: YYYY-MM)
+                    $monthYear = $data['date'] ?? date('Y-m');
+                    
+                    // // Validate the input format
+                    // if (!preg_match('/^\d{4}-\d{2}$/', $monthYear)) {
+                    //     throw new Exception("Invalid month format. Use YYYY-MM");
+                    // }
+                    
+                    $inventoryId = $data['inventory_id'] ?? null; // Your specific item ID
+                
+                    $query = "SELECT SUM(quantity) AS total_dispensed
+                            FROM dispensed_items
+                            WHERE inventory_id = ?
+                            AND DATE_FORMAT(dispensed_at, '%Y-%m') = ? ";
+                    
+                    $params = [$inventoryId, $monthYear];
+                
+                    // if ($inventoryId) {
+                    //     $query .= " AND inventory_id = ?";
+                    //     $params[] = $inventoryId;
+                    // }
+                
+                    $stmt = $pdo->prepare($query);
+                    $stmt->execute($params);
+                    $report = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+                    echo json_encode([
+                        'success' => true,
+                        'data' => $report,
+                    ]);
+                    break;
             default:
                 http_response_code(400);
                 echo json_encode(['success' => false, 'error' => 'Invalid method']);
